@@ -28,7 +28,6 @@ namespace TDDStore.UnitTests
             var customerId = Guid.NewGuid();
             var expectedOrderId = Guid.NewGuid();
 
-            //var orderDataService = Mock.Create<IOrderDataService>();
 
             //Mock.Arrange command makes this orderDataService mock object into a stub.
             // Arg.IsAny<Order>()) is a matcher, not with any specific functionality, 
