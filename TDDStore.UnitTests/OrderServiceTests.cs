@@ -33,6 +33,9 @@ namespace TDDStore.UnitTests
             shoppingCart.Items.Add(new ShoppingCartItem { ItemId = Guid.NewGuid(), Quantity = 1 });
             var customerId = Guid.NewGuid();
             var expectedOrderId = Guid.NewGuid();
+            var orderFulfillmentSessionId = Guid.NewGuid();
+            var itemId = Guid.NewGuid();
+            var customer = new Customer { Id = customerId };
 
 
             //Mock.Arrange command makes this orderDataService mock object into a stub.
@@ -42,6 +45,20 @@ namespace TDDStore.UnitTests
                 .Returns(expectedOrderId)
                 .OccursOnce();
 
+            Mock.Arrange(() => customerService
+                .GetCustomer(customerId)).Returns(customer).OccursOnce();
+
+            Mock.Arrange(() => orderFulfillmentService
+                .OpenSession(Arg.IsAny<string>(), Arg.IsAny<string>()))
+                .Returns(orderFulfillmentSessionId);
+
+            Mock.Arrange(() => orderFulfillmentService
+                .IsInInventory(orderFulfillmentSessionId, itemId, 1))
+                .Returns(true);
+
+            Mock.Arrange(() => orderFulfillmentService
+                .PlaceOrder(orderFulfillmentSessionId, Arg.IsAny<IDictionary<Guid, int>>(), Arg.IsAny<string>()))
+                .Returns(true);
 
             //Act
             var result = orderService.PlaceOrder(customerId, shoppingCart);
@@ -129,7 +146,6 @@ namespace TDDStore.UnitTests
             Mock.Arrange(() => orderFulfillmentService
                 .CloseSession(orderFulfillmentSessionId))
                 .InOrder();
-
 
 
             // Act
