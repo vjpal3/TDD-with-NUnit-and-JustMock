@@ -44,6 +44,14 @@ namespace TddStore.Core
             //Open session
             Guid orderFulfillmentSessionId = OpenOrderFuilfillmentSession();
 
+            PlaceOrderWithFulfillmentService(orderFulfillmentSessionId, shoppingCart, customer);
+
+            // Close session
+            CloseOrderFulfillmentService(orderFulfillmentSessionId);
+        }
+
+        private void PlaceOrderWithFulfillmentService(Guid orderFulfillmentSessionId, ShoppingCart shoppingCart, Customer customer)
+        {
             var firstItemId = shoppingCart.Items[0].ItemId;
             var firstItemQuantity = shoppingCart.Items[0].Quantity;
 
@@ -57,9 +65,6 @@ namespace TddStore.Core
 
             var orderPlaced = _orderFulfillmentService
                 .PlaceOrder(orderFulfillmentSessionId, orderForFulfillmentService, customer.ShippingAddress.ToString());
-
-            // Close session
-            CloseOrderFulfillmentService(orderFulfillmentSessionId);
         }
 
         private void CloseOrderFulfillmentService(Guid orderFulfillmentSessionId)
