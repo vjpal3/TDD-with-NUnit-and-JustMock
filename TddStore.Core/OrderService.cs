@@ -52,6 +52,15 @@ namespace TddStore.Core
 
         private void PlaceOrderWithFulfillmentService(Guid orderFulfillmentSessionId, ShoppingCart shoppingCart, Customer customer)
         {
+            Dictionary<Guid, int> orderForFulfillmentService = CheckInventoryLevels(orderFulfillmentSessionId, shoppingCart);
+
+            // Place order
+            var orderPlaced = _orderFulfillmentService
+                .PlaceOrder(orderFulfillmentSessionId, orderForFulfillmentService, customer.ShippingAddress.ToString());
+        }
+
+        private Dictionary<Guid, int> CheckInventoryLevels(Guid orderFulfillmentSessionId, ShoppingCart shoppingCart)
+        {
             var firstItemId = shoppingCart.Items[0].ItemId;
             var firstItemQuantity = shoppingCart.Items[0].Quantity;
 
@@ -59,12 +68,9 @@ namespace TddStore.Core
             // check inventory
             var itemIsInInventory = _orderFulfillmentService.IsInInventory(orderFulfillmentSessionId, firstItemId, firstItemQuantity);
 
-            // Place order
             var orderForFulfillmentService = new Dictionary<Guid, int>();
             orderForFulfillmentService.Add(firstItemId, firstItemQuantity);
-
-            var orderPlaced = _orderFulfillmentService
-                .PlaceOrder(orderFulfillmentSessionId, orderForFulfillmentService, customer.ShippingAddress.ToString());
+            return orderForFulfillmentService;
         }
 
         private void CloseOrderFulfillmentService(Guid orderFulfillmentSessionId)
