@@ -3,6 +3,7 @@ using NUnit.Framework;
 using TddStore.Core;
 using Telerik.JustMock;
 using TddStore.Core.Exceptions;
+using System.Collections.Generic;
 
 namespace TDDStore.UnitTests
 {
@@ -12,13 +13,16 @@ namespace TDDStore.UnitTests
         private OrderService orderService;
         private IOrderDataService orderDataService;
         private ICustomerService customerService;
+        private IOrderFulfillmentService orderFulfillmentService;
 
         [SetUp]
         public void Setup()
         {
             orderDataService = Mock.Create<IOrderDataService>();
             customerService = Mock.Create<ICustomerService>();
-            orderService = new OrderService(orderDataService, customerService);
+            
+            orderFulfillmentService = Mock.Create<IOrderFulfillmentService>();
+            orderService = new OrderService(orderDataService, customerService, orderFulfillmentService);
         }
 
         [Test]
@@ -38,7 +42,7 @@ namespace TDDStore.UnitTests
                 .Returns(expectedOrderId)
                 .OccursOnce();
 
-            
+
             //Act
             var result = orderService.PlaceOrder(customerId, shoppingCart);
 
@@ -90,5 +94,50 @@ namespace TDDStore.UnitTests
 
         }
 
+        [Test]
+        public void WhenUserPlacesOrderWithItemThatIsInInventoryOrderFulfillmentWorkflowShouldComplete()
+        {
+            //Arrange
+            var shoppingCart = new ShoppingCart();
+            var itemId = Guid.NewGuid();
+            shoppingCart.Items.Add(new ShoppingCartItem { ItemId = itemId, Quantity = 1 });
+            
+            var customerId = Guid.NewGuid();
+            var customer = new Customer { Id = customerId };
+
+            var orderFulfillmentSessionId = Guid.NewGuid();  
+
+            Mock.Arrange(() => customerService.GetCustomer(customerId))
+                .Returns(customer)
+                .OccursOnce();
+
+            Mock.Arrange(() => orderFulfillmentService
+                .OpenSession(Arg.IsAny<string>(), Arg.IsAny<string>()))
+                .Returns(orderFulfillmentSessionId)
+                .InOrder();
+
+            Mock.Arrange(() => orderFulfillmentService
+                .IsInInventory(orderFulfillmentSessionId, itemId, 1))
+                .Returns(true)
+                .InOrder(); 
+            
+            Mock.Arrange(() => orderFulfillmentService
+                .PlaceOrder(orderFulfillmentSessionId, Arg.IsAny<IDictionary<Guid, int>>(), Arg.IsAny<string>()))
+                .Returns(true)
+                .InOrder();
+
+            Mock.Arrange(() => orderFulfillmentService
+                .CloseSession(orderFulfillmentSessionId))
+                .InOrder();
+
+
+
+            // Act
+            orderService.PlaceOrder(customerId, shoppingCart);
+
+            // Assert
+            Mock.Assert(orderFulfillmentService);
+
+        }
     }
 }
