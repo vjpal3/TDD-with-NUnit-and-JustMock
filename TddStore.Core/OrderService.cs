@@ -32,8 +32,17 @@ namespace TddStore.Core
 
             var customer = _customerService.GetCustomer(customerId);
 
+            PlaceOrderWithFulfillmentService(shoppingCart, customer);
+
+            var order = new Order();
+            return _orderDataService.Save(order);
+
+        }
+
+        private void PlaceOrderWithFulfillmentService(ShoppingCart shoppingCart, Customer customer)
+        {
             //Open session
-            var orderFulfillmentSessionId = _orderFulfillmentService.OpenSession(USERNAME, PASSWORD);
+            Guid orderFulfillmentSessionId = OpenOrderFuilfillmentSession();
 
             var firstItemId = shoppingCart.Items[0].ItemId;
             var firstItemQuantity = shoppingCart.Items[0].Quantity;
@@ -50,11 +59,17 @@ namespace TddStore.Core
                 .PlaceOrder(orderFulfillmentSessionId, orderForFulfillmentService, customer.ShippingAddress.ToString());
 
             // Close session
-            _orderFulfillmentService.CloseSession(orderFulfillmentSessionId);
+            CloseOrderFulfillmentService(orderFulfillmentSessionId);
+        }
 
-            var order = new Order();
-            return _orderDataService.Save(order);
-            
+        private void CloseOrderFulfillmentService(Guid orderFulfillmentSessionId)
+        {
+            _orderFulfillmentService.CloseSession(orderFulfillmentSessionId);
+        }
+
+        private Guid OpenOrderFuilfillmentSession()
+        {
+            return _orderFulfillmentService.OpenSession(USERNAME, PASSWORD);
         }
     }  
 } 
