@@ -11,14 +11,16 @@ namespace TDDStore.UnitTests
     {
         private OrderService orderService;
         private IOrderDataService orderDataService;
+        private ICustomerService customerService;
 
         [SetUp]
         public void Setup()
         {
             orderDataService = Mock.Create<IOrderDataService>();
-            orderService = new OrderService(orderDataService);
+            customerService = Mock.Create<ICustomerService>();
+            orderService = new OrderService(orderDataService, customerService);
         }
-        
+
         [Test]
         public void WhenUserPlacesACorrectOrderThenAnOrderNumberShouldBeReturned()
         {
@@ -36,8 +38,7 @@ namespace TDDStore.UnitTests
                 .Returns(expectedOrderId)
                 .OccursOnce();
 
-            //var orderService = new OrderService(orderDataService);
-
+            
             //Act
             var result = orderService.PlaceOrder(customerId, shoppingCart);
 
@@ -66,5 +67,28 @@ namespace TDDStore.UnitTests
 
             Mock.Assert(orderDataService);
         }
+
+        [Test]
+        public void WhenAValidCustomerPlacesAValidOrderAnOrderShouldBePlaced()
+        {
+            //Arrange
+            var shoppingCart = new ShoppingCart();
+            shoppingCart.Items.Add(new ShoppingCartItem { ItemId = Guid.NewGuid(), Quantity = 1 });
+
+            var customerId = Guid.NewGuid();
+            var customerToReturn = new Customer { Id = customerId, FirstName = "Sarah", LastName = "Flinstone" };
+
+            Mock.Arrange(() => customerService.GetCustomer(customerId))
+                .Returns(customerToReturn)
+                .OccursOnce();
+
+            //Act
+            orderService.PlaceOrder(customerId, shoppingCart);
+
+            //Assert
+            Mock.Assert(customerService);
+
+        }
+
     }
 }
